@@ -32,7 +32,7 @@ Once connected, your assistant gains these tools:
 Requires [Node.js](https://nodejs.org) 18+.
 
 ```bash
-git clone https://github.com/guillaumehussong/comprasal-mcp.git
+git clone https://github.com/glassbit/comprasal-mcp.git
 cd comprasal-mcp
 npm install
 npm run build
