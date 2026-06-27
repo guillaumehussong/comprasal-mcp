@@ -15,7 +15,7 @@
     "start": "node dist/index.js",
     "dev": "tsc --watch",
     "test": "tsx --test tests/*.test.ts",
-    "test:live": "RUN_LIVE_TESTS=1 tsx --test tests/comprasal.test.ts"
+    "test:live": "tsx --test tests/integration/comprasal-live.ts"
   },
   "keywords": [
     "mcp",
@@ -29,7 +29,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
     "undici": "^6.21.0",
-    "zod": "^3.23.8"
+    "zod": "^3.25.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

@@ -1,7 +1,7 @@
 /**
  * Optional file-based HTTP response cache for COMPRASAL API calls.
  *
- * Enabled by default. Disable with COMPRASAL_CACHE_ENABLED=false.
+ * Disabled by default (live API on every request). Opt in with COMPRASAL_CACHE_ENABLED=true.
  * Cache dir: COMPRASAL_CACHE_DIR or .comprasal-cache/ in cwd.
  * TTL: COMPRASAL_CACHE_TTL_MS (default 1 hour).
  */
@@ -40,7 +40,7 @@ function envInt(name: string, defaultValue: number): number {
 
 export function resolveCacheOptions(overrides?: CacheOptions): Required<CacheOptions> {
   return {
-    enabled: overrides?.enabled ?? envBool("COMPRASAL_CACHE_ENABLED", true),
+    enabled: overrides?.enabled ?? envBool("COMPRASAL_CACHE_ENABLED", false),
     dir: overrides?.dir ?? process.env.COMPRASAL_CACHE_DIR ?? DEFAULT_DIR,
     ttlMs: overrides?.ttlMs ?? envInt("COMPRASAL_CACHE_TTL_MS", DEFAULT_TTL_MS),
   };

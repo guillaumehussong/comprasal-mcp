@@ -1,12 +1,13 @@
 import { z } from "zod";
 
-const positiveInt = z.number().int().positive();
+/** Coerce preserves pre-v0.2 behaviour where MCP clients may send numeric ids as strings. */
+const positiveInt = z.coerce.number().int().positive();
 const nonEmptyString = z.string().trim().min(1);
 
 export const searchProcurementSchema = z.object({
   search: z.string().optional(),
   id_institucion: positiveInt.optional(),
-  anio: z.number().int().min(2000).max(2100).optional(),
+  anio: z.coerce.number().int().min(2000).max(2100).optional(),
   fecha_inicio: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "fecha_inicio must be YYYY-MM-DD")
@@ -18,8 +19,8 @@ export const searchProcurementSchema = z.object({
   id_modalidad: positiveInt.optional(),
   id_estado: positiveInt.optional(),
   nombre_proceso: z.string().optional(),
-  page: z.number().int().min(1).optional(),
-  per_page: z.number().int().min(1).max(100).optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  per_page: z.coerce.number().int().min(1).max(100).optional(),
 });
 
 export const getProcessDetailSchema = z.object({
@@ -33,14 +34,14 @@ export const getAwardReportSchema = z.object({
 export const getSupplierContractsSchema = z.object({
   supplier: nonEmptyString,
   id_institucion: positiveInt.optional(),
-  anio: z.number().int().min(2000).max(2100).optional(),
-  max_pages: z.number().int().min(1).max(30).optional(),
+  anio: z.coerce.number().int().min(2000).max(2100).optional(),
+  max_pages: z.coerce.number().int().min(1).max(30).optional(),
 });
 
 export const listInstitutionsSchema = z.object({
   search: z.string().optional(),
-  page: z.number().int().min(1).optional(),
-  per_page: z.number().int().min(1).max(200).optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  per_page: z.coerce.number().int().min(1).max(200).optional(),
 });
 
 export const emptySchema = z.object({});

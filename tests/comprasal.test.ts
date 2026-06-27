@@ -91,13 +91,3 @@ describe("comprasal (mocked HTTP)", () => {
     assert.match(r.coverage.warning, /Bounded scan/);
   });
 });
-
-describe("comprasal live API", () => {
-  it("listYears returns data from real API", { skip: !process.env.RUN_LIVE_TESTS }, async () => {
-    setHttpFetcher(null);
-    const { listYears } = await import("../src/comprasal.js");
-    const years = await listYears();
-    assert.ok(Array.isArray(years));
-    assert.ok(years.length > 0);
-  });
-});

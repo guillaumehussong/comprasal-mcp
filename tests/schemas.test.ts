@@ -41,10 +41,8 @@ describe("schemas", () => {
     );
   });
 
-  it("coerces nothing — numbers must be numbers", () => {
-    assert.throws(
-      () => parseToolArgs(getProcessDetailSchema, { id_proceso_compra: "83743" }),
-      ValidationError,
-    );
+  it("coerces string numeric ids like pre-v0.2 Number() calls", () => {
+    const input = parseToolArgs(getProcessDetailSchema, { id_proceso_compra: "83743" });
+    assert.equal(input.id_proceso_compra, 83743);
   });
 });

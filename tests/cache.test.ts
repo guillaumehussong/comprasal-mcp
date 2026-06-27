@@ -3,7 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, describe, it } from "node:test";
-import { cacheKey, FileCache } from "../src/cache.js";
+import { cacheKey, FileCache, resolveCacheOptions } from "../src/cache.js";
 
 describe("FileCache", () => {
   let dir: string;
@@ -47,5 +47,12 @@ describe("FileCache", () => {
     const b = cacheKey("https://www.comprasal.gob.sv/api/v1/anios");
     assert.equal(a, b);
     assert.notEqual(a, cacheKey("https://www.comprasal.gob.sv/api/v1/estados"));
+  });
+
+  it("is disabled by default", () => {
+    const prev = process.env.COMPRASAL_CACHE_ENABLED;
+    delete process.env.COMPRASAL_CACHE_ENABLED;
+    assert.equal(resolveCacheOptions().enabled, false);
+    if (prev !== undefined) process.env.COMPRASAL_CACHE_ENABLED = prev;
   });
 });
