@@ -1,0 +1,36 @@
+{
+  "name": "comprasal-mcp",
+  "version": "0.1.0",
+  "description": "MCP server exposing El Salvador's public procurement data (COMPRASAL) to AI assistants like Claude Desktop and ChatGPT.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "comprasal-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "el-salvador",
+    "comprasal",
+    "procurement",
+    "open-data",
+    "transparency"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "undici": "^6.21.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.2"
+  }
+}
