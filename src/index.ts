@@ -1,17 +1,5 @@
 #!/usr/bin/env node
-/**
- * COMPRASAL MCP server.
- *
- * Exposes El Salvador's public procurement data (comprasal.gob.sv) to MCP-compatible
- * AI assistants (Claude Desktop, Cursor, etc.) as a set of read-only tools.
- *
- * Design constraints (from API reconnaissance):
- *  - Backend latency ~7s/request. Multi-page tools scan a bounded number of pages per call.
- *  - Pagination is exposed to the USER (page/per_page args) rather than auto-walked
- *    without limit, so responses stay within reasonable time.
- *  - Responses are optionally cached on disk (see cache.ts).
- *  - Data is public under LACAP. This server only reads; it never writes.
- */
+/** MCP server exposing El Salvador public procurement data (COMPRASAL) as read-only tools. */
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -42,11 +30,13 @@ import {
   ValidationError,
 } from "./schemas.js";
 
+/** MCP server instance for the comprasal-mcp project. */
 const server = new Server(
   { name: "comprasal-mcp", version: "0.2.0" },
   { capabilities: { tools: {} } },
 );
 
+/** Tool definitions exposed to MCP clients via ListTools. */
 const tools = [
   {
     name: "search_procurement",
@@ -123,12 +113,15 @@ const tools = [
   },
 ];
 
+/** Handles ListTools requests by returning the tool definitions. */
 server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools }));
 
+/** Wraps a successful tool result as MCP text content. */
 function ok(payload: unknown) {
   return { content: [{ type: "text", text: JSON.stringify(payload, null, 2) }] };
 }
 
+/** Wraps an error as MCP text content with isError set to true. */
 function fail(err: unknown) {
   const msg =
     err instanceof ComprasalError || err instanceof ValidationError
@@ -137,6 +130,7 @@ function fail(err: unknown) {
   return { content: [{ type: "text", text: msg }], isError: true };
 }
 
+/** Handles CallTool requests by validating input and dispatching to the API client. */
 server.setRequestHandler(CallToolRequestSchema, async (req) => {
   const { name, arguments: args = {} } = req.params;
   try {
@@ -187,6 +181,7 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
   }
 });
 
+/** Starts the MCP server on stdio transport. */
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);

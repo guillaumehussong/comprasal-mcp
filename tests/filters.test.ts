@@ -1,3 +1,5 @@
+/** Unit tests for client-side record filter functions. */
+
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
@@ -9,6 +11,7 @@ import {
   supplierName,
 } from "../src/filters.js";
 
+/** Sample procurement record used across filter tests. */
 const sampleRecord = {
   institucion: { nombre: "Ministerio de Salud" },
   proveedor: { nombre: "ACME Corp", nombre_comercial: "ACME" },

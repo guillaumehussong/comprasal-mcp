@@ -1,3 +1,5 @@
+/** Integration tests for the COMPRASAL API client using mocked HTTP. */
+
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import {
@@ -7,6 +9,7 @@ import {
   setHttpFetcher,
 } from "../src/comprasal.js";
 
+/** Fake paginated process list returned by the mock fetcher. */
 const mockProcesses = {
   data: Array.from({ length: 50 }, (_, i) =>
     i === 0
@@ -31,6 +34,7 @@ const mockProcesses = {
   ),
 };
 
+/** Fake institution catalog returned by the mock fetcher. */
 const mockInstitutions = {
   data: [
     { id: 1, nombre: "Ministerio de Salud" },
@@ -38,6 +42,7 @@ const mockInstitutions = {
   ],
 };
 
+/** Returns a fetcher that serves canned JSON for known API paths. */
 function mockFetcher(routes: Record<string, unknown>) {
   return async (path: string) => {
     const body = routes[path];

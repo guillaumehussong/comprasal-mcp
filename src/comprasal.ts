@@ -1,16 +1,4 @@
-/**
- * Thin HTTP client for the COMPRASAL public REST API.
- *
- * Base: https://www.comprasal.gob.sv/api/v1
- * No authentication required. Endpoints are public (LACAP-mandated procurement data).
- *
- * Key facts established by network reconnaissance (2026-06):
- *  - Pagination metadata is returned in RESPONSE HEADERS (total_rows, page, per_page),
- *    NOT in the body. We read them from headers.
- *  - Backend latency is ~7s/request and constant (not a throttle). Use generous timeouts.
- *  - Results are sorted by id DESC (newest first).
- *  - Responses may be cached locally (see cache.ts) to speed repeated queries.
- */
+/** HTTP client for the public COMPRASAL REST API (comprasal.gob.sv). */
 
 import { request } from "undici";
 import { cacheKey, getGlobalCache } from "./cache.js";
@@ -21,13 +9,23 @@ import {
   supplierName,
 } from "./filters.js";
 
+/** Base URL for all COMPRASAL API requests. */
 const BASE = "https://www.comprasal.gob.sv/api/v1";
 
+/** Browser-like User-Agent to avoid Cloudflare blocks. */
 const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
+/** Request timeout in ms (the upstream API is slow, ~7s per call). */
 const DEFAULT_TIMEOUT_MS = 30_000;
 
+/** Number of records fetched per upstream page. */
+const PER_PAGE_UPSTREAM = 50;
+
+/** Max upstream pages scanned in a single searchProcesses call. */
+const MAX_PAGES_PER_CALL = 6;
+
+/** Paginated API result with data rows and pagination metadata. */
 export interface PagedResult<T> {
   data: T[];
   pagination: {
@@ -37,7 +35,9 @@ export interface PagedResult<T> {
   };
 }
 
+/** Error thrown when the COMPRASAL API returns a network or HTTP failure. */
 export class ComprasalError extends Error {
+  /** Creates an API error, optionally with an HTTP status code. */
   constructor(
     message: string,
     public readonly status?: number,
@@ -47,24 +47,28 @@ export class ComprasalError extends Error {
   }
 }
 
+/** Parsed JSON body plus response headers from one API call. */
 export type JsonResponse = {
   body: unknown;
   headers: Record<string, string | string[] | undefined>;
   fromCache?: boolean;
 };
 
+/** Function signature for fetching JSON from the COMPRASAL API. */
 export type HttpFetcher = (
   path: string,
   query?: Record<string, string | number | undefined>,
 ) => Promise<JsonResponse>;
 
+/** Optional mock fetcher injected during tests. */
 let httpFetcher: HttpFetcher | null = null;
 
-/** @internal Test hook — inject a mock HTTP layer. */
+/** Sets a custom HTTP fetcher (pass null to restore the default). */
 export function setHttpFetcher(fetcher: HttpFetcher | null): void {
   httpFetcher = fetcher;
 }
 
+/** Performs a real GET request to COMPRASAL, with optional disk caching. */
 async function defaultGetJson(
   path: string,
   query?: Record<string, string | number | undefined>,
@@ -126,6 +130,7 @@ async function defaultGetJson(
   return { body, headers, fromCache: false };
 }
 
+/** Fetches JSON using the mock fetcher if set, otherwise the real API. */
 async function getJson(
   path: string,
   query?: Record<string, string | number | undefined>,
@@ -134,6 +139,7 @@ async function getJson(
   return fetcher(path, query);
 }
 
+/** Parses a numeric value from a response header. */
 function num(h: string | string[] | undefined): number | null {
   if (h === undefined) return null;
   const v = Array.isArray(h) ? h[0] : h;
@@ -141,9 +147,7 @@ function num(h: string | string[] | undefined): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-const PER_PAGE_UPSTREAM = 50;
-const MAX_PAGES_PER_CALL = 6;
-
+/** Searches awarded processes with client-side filtering over fetched pages. */
 export async function searchProcesses(params: {
   page?: number;
   per_page?: number;
@@ -243,6 +247,7 @@ export async function searchProcesses(params: {
   };
 }
 
+/** Fetches full detail and stage calendar for one procurement process. */
 export async function getProcessDetail(idProcesoCompra: number): Promise<unknown> {
   const { body } = await getJson(
     `/publico/obtener/detalle/procesos/publicos/${idProcesoCompra}`,
@@ -250,11 +255,13 @@ export async function getProcessDetail(idProcesoCompra: number): Promise<unknown
   return (body as any)?.data ?? body;
 }
 
+/** Fetches the award report with bidders, amounts, and budget codes. */
 export async function getAwardReport(id: number): Promise<unknown> {
   const { body } = await getJson(`/publico/obtener/informe-adjudicacion/${id}`);
   return (body as any)?.data ?? body;
 }
 
+/** Lists institutions, with optional client-side name filtering and pagination. */
 export async function listInstitutions(params: {
   search?: string;
   page?: number;
@@ -295,21 +302,25 @@ export async function listInstitutions(params: {
   };
 }
 
+/** Returns all contracting modalities (licitación, contratación directa, etc.). */
 export async function listModalities(): Promise<unknown[]> {
   const { body } = await getJson("/publico/obtener/modalidades");
   return (body as any)?.data ?? body ?? [];
 }
 
+/** Returns all procurement process states with their ids. */
 export async function listStates(): Promise<unknown[]> {
   const { body } = await getJson("/publico/obtener/estados");
   return (body as any)?.data ?? body ?? [];
 }
 
+/** Returns all fiscal years available in COMPRASAL. */
 export async function listYears(): Promise<unknown[]> {
   const { body } = await getJson("/anios");
   return (body as any)?.data ?? body ?? [];
 }
 
+/** Finds contracts won by a supplier name within a bounded recent scan window. */
 export async function getSupplierContracts(params: {
   supplier: string;
   max_pages?: number;

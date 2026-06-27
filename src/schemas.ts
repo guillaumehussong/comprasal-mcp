@@ -1,9 +1,14 @@
+/** Zod schemas for validating MCP tool arguments before calling the API. */
+
 import { z } from "zod";
 
-/** Coerce preserves pre-v0.2 behaviour where MCP clients may send numeric ids as strings. */
+/** Validates a positive integer, coercing string numbers from MCP clients. */
 const positiveInt = z.coerce.number().int().positive();
+
+/** Validates a non-empty string after trimming whitespace. */
 const nonEmptyString = z.string().trim().min(1);
 
+/** Input schema for the search_procurement tool. */
 export const searchProcurementSchema = z.object({
   search: z.string().optional(),
   id_institucion: positiveInt.optional(),
@@ -23,14 +28,17 @@ export const searchProcurementSchema = z.object({
   per_page: z.coerce.number().int().min(1).max(100).optional(),
 });
 
+/** Input schema for the get_process_detail tool. */
 export const getProcessDetailSchema = z.object({
   id_proceso_compra: positiveInt,
 });
 
+/** Input schema for the get_award_report tool. */
 export const getAwardReportSchema = z.object({
   id: positiveInt,
 });
 
+/** Input schema for the get_supplier_contracts tool. */
 export const getSupplierContractsSchema = z.object({
   supplier: nonEmptyString,
   id_institucion: positiveInt.optional(),
@@ -38,32 +46,47 @@ export const getSupplierContractsSchema = z.object({
   max_pages: z.coerce.number().int().min(1).max(30).optional(),
 });
 
+/** Input schema for the list_institutions tool. */
 export const listInstitutionsSchema = z.object({
   search: z.string().optional(),
   page: z.coerce.number().int().min(1).optional(),
   per_page: z.coerce.number().int().min(1).max(200).optional(),
 });
 
+/** Input schema for tools that accept no arguments. */
 export const emptySchema = z.object({});
 
+/** Parsed input type for search_procurement. */
 export type SearchProcurementInput = z.infer<typeof searchProcurementSchema>;
+
+/** Parsed input type for get_process_detail. */
 export type GetProcessDetailInput = z.infer<typeof getProcessDetailSchema>;
+
+/** Parsed input type for get_award_report. */
 export type GetAwardReportInput = z.infer<typeof getAwardReportSchema>;
+
+/** Parsed input type for get_supplier_contracts. */
 export type GetSupplierContractsInput = z.infer<typeof getSupplierContractsSchema>;
+
+/** Parsed input type for list_institutions. */
 export type ListInstitutionsInput = z.infer<typeof listInstitutionsSchema>;
 
+/** Error thrown when tool arguments fail Zod validation. */
 export class ValidationError extends Error {
+  /** Creates a validation error with the given message. */
   constructor(message: string) {
     super(message);
     this.name = "ValidationError";
   }
 }
 
+/** Formats a Zod error into a short human-readable string. */
 export function formatZodError(err: z.ZodError): string {
   const parts = err.errors.map((e) => `${e.path.join(".") || "input"}: ${e.message}`);
   return `Invalid arguments: ${parts.join("; ")}`;
 }
 
+/** Parses and validates tool arguments, throwing ValidationError on failure. */
 export function parseToolArgs<T extends z.ZodTypeAny>(schema: T, args: unknown): z.infer<T> {
   const result = schema.safeParse(args ?? {});
   if (!result.success) {
@@ -72,7 +95,7 @@ export function parseToolArgs<T extends z.ZodTypeAny>(schema: T, args: unknown):
   return result.data;
 }
 
-/** JSON Schema fragments for MCP ListTools (kept in sync with Zod). */
+/** JSON Schema definitions exposed to MCP clients via ListTools. */
 export const toolInputSchemas = {
   search_procurement: {
     type: "object" as const,
