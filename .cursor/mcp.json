@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "comprasal": {
+      "command": "node",
+      "args": ["${workspaceFolder}/dist/index.js"]
+    }
+  }
+}

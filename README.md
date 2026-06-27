@@ -32,11 +32,22 @@ Once connected, your assistant gains these tools:
 Requires [Node.js](https://nodejs.org) 18+.
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/comprasal-mcp.git
+git clone https://github.com/guillaumehussong/comprasal-mcp.git
 cd comprasal-mcp
 npm install
 npm run build
+npm test
 ```
+
+## Connect to Cursor
+
+This repo ships a project-level MCP config at `.cursor/mcp.json`. After `npm run build`:
+
+1. Open this folder in Cursor.
+2. Go to **Settings → MCP** and enable the **comprasal** server (or restart Cursor).
+3. The assistant can call the COMPRASAL tools in Agent mode.
+
+The config runs `node dist/index.js` against the live COMPRASAL API (cache off by default). To override globally, add the same block to your user MCP settings.
 
 ## Connect to Claude Desktop
 
@@ -60,6 +71,31 @@ Restart Claude Desktop. You'll see the COMPRASAL tools available. Ask it about E
 
 ---
 
+## Local cache (opt-in)
+
+By default every request goes to the live COMPRASAL API — a fresh clone behaves identically for everyone. You may opt in to a **local, per-user** response cache to speed up repeated queries within a session:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `COMPRASAL_CACHE_ENABLED` | `false` | Set to `true` to cache raw API responses on disk |
+| `COMPRASAL_CACHE_DIR` | `.comprasal-cache` | Cache directory (gitignored, never committed) |
+| `COMPRASAL_CACHE_TTL_MS` | `3600000` (1 hour) | Entry lifetime; expired entries are deleted on read |
+
+The cache is **not** a shared or committed database — it is created at runtime on your machine only. After TTL expiry, the next request fetches live data again. Disable it anytime with `COMPRASAL_CACHE_ENABLED=false`.
+
+---
+
+## Tests
+
+```bash
+npm test              # unit + mocked integration only (no network)
+npm run test:live     # optional smoke test against real COMPRASAL API (~7s)
+```
+
+Tests cover client-side filters, Zod argument validation, file cache behaviour, and mocked HTTP flows.
+
+---
+
 ## Notes & caveats
 
 **The upstream government API only filters reliably by institution.** This is the single most important thing to understand about this tool:
@@ -72,10 +108,13 @@ Restart Claude Desktop. You'll see the COMPRASAL tools available. Ask it about E
 - **Date filters** apply to the award date (`fecha_adjudicacion`) in this server, even though the raw upstream API filters on the process start date.
 - `get_award_report` uses a different id than the other endpoints (a known upstream quirk). Prefer `get_process_detail` unless you specifically need the bidder/budget breakdown.
 - The dataset holds ~100k+ awarded processes, current through 2026. Each process may appear as several rows (one per lot/supplier).
+- Tool arguments are validated with **Zod** before any upstream call; invalid inputs return a clear error without hitting the API.
 
-### Why no local database / cache?
+### Why no local database / committed cache?
 
-This server queries the live public API so that **anyone who clones it gets identical results with zero setup**. A cached database would mean either hosting a central server (defeating the "run it yourself" model) or asking every user to scrape COMPRASAL first (hours of work). The trade-off is the bounded-history limitation above. A cached variant for deep historical analysis may come later as a separate, opt-in project.
+This server queries the **live** public API so that **anyone who clones it gets identical results with zero setup** — no pre-scraped dataset, no shared state in the repo. A committed database would mean either hosting a central server (defeating the "run it yourself" model) or asking every user to scrape COMPRASAL first (hours of work).
+
+An **optional, opt-in file cache** is available for convenience: it lives in `.comprasal-cache/` on your machine only (gitignored), expires after 1 hour, and is **off by default**. It does not change what a fresh clone returns on first run. A full local-database variant for deep historical analysis remains a possible separate, opt-in project.
 
 ## Data, source & legality
 
