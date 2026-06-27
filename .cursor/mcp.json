@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "comprasal": {
+      "command": "node",
+      "args": ["${workspaceFolder}/dist/index.js"],
+      "env": {
+        "COMPRASAL_CACHE_ENABLED": "true",
+        "COMPRASAL_CACHE_TTL_MS": "3600000"
+      }
+    }
+  }
+}

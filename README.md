@@ -32,11 +32,22 @@ Once connected, your assistant gains these tools:
 Requires [Node.js](https://nodejs.org) 18+.
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/comprasal-mcp.git
+git clone https://github.com/guillaumehussong/comprasal-mcp.git
 cd comprasal-mcp
 npm install
 npm run build
+npm test
 ```
+
+## Connect to Cursor
+
+This repo ships a project-level MCP config at `.cursor/mcp.json`. After `npm run build`:
+
+1. Open this folder in Cursor.
+2. Go to **Settings → MCP** and enable the **comprasal** server (or restart Cursor).
+3. The assistant can call the COMPRASAL tools in Agent mode.
+
+The config runs `node dist/index.js` with disk cache enabled. To override globally, add the same block to your user MCP settings.
 
 ## Connect to Claude Desktop
 
@@ -60,6 +71,31 @@ Restart Claude Desktop. You'll see the COMPRASAL tools available. Ask it about E
 
 ---
 
+## Local cache
+
+Repeated queries are cached on disk (default: `.comprasal-cache/`, TTL 1 hour) so catalog lookups and follow-up questions are much faster.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `COMPRASAL_CACHE_ENABLED` | `true` | Set to `false` to always hit the live API |
+| `COMPRASAL_CACHE_DIR` | `.comprasal-cache` | Cache directory path |
+| `COMPRASAL_CACHE_TTL_MS` | `3600000` | Entry lifetime in milliseconds |
+
+The cache stores raw API responses — not a full local database — so first-time queries still respect upstream latency.
+
+---
+
+## Tests
+
+```bash
+npm test              # unit + mocked integration tests (fast)
+npm run test:live     # optional smoke test against the real COMPRASAL API (~7s)
+```
+
+Tests cover client-side filters, Zod argument validation, file cache behaviour, and mocked HTTP flows.
+
+---
+
 ## Notes & caveats
 
 **The upstream government API only filters reliably by institution.** This is the single most important thing to understand about this tool:
@@ -72,10 +108,7 @@ Restart Claude Desktop. You'll see the COMPRASAL tools available. Ask it about E
 - **Date filters** apply to the award date (`fecha_adjudicacion`) in this server, even though the raw upstream API filters on the process start date.
 - `get_award_report` uses a different id than the other endpoints (a known upstream quirk). Prefer `get_process_detail` unless you specifically need the bidder/budget breakdown.
 - The dataset holds ~100k+ awarded processes, current through 2026. Each process may appear as several rows (one per lot/supplier).
-
-### Why no local database / cache?
-
-This server queries the live public API so that **anyone who clones it gets identical results with zero setup**. A cached database would mean either hosting a central server (defeating the "run it yourself" model) or asking every user to scrape COMPRASAL first (hours of work). The trade-off is the bounded-history limitation above. A cached variant for deep historical analysis may come later as a separate, opt-in project.
+- Tool arguments are validated with **Zod** before any upstream call; invalid inputs return a clear error without hitting the API.
 
 ## Data, source & legality
 
